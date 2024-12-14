@@ -21,3 +21,4 @@ venv
 docs.zip
 archive.zip
 .ruff_cache
+.venv
