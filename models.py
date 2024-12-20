@@ -4,10 +4,6 @@ from sqlalchemy import Column, Integer, String, Boolean, DateTime, Float, Foreig
 from sqlalchemy.orm import relationship, backref
 
 
-def utcnow():
-    return datetime.utcnow()
-
-
 class Parents(Base):
     __tablename__ = "parents"
 
@@ -16,14 +12,13 @@ class Parents(Base):
     username = Column(String, unique=True)
     first_name = Column(String(100), nullable=False)
     last_name = Column(String(100))
-    hashed_password = Column(String)
+    hashed_password = Column(String, nullable=False)
     is_active = Column(Boolean, default=True)
     role = Column(Integer, ForeignKey("roles_dict.id"))
-    create_datetime = Column(DateTime, default=utcnow, nullable=False)
-    modify_datetime = Column(DateTime)
+    created_datetime_utc = Column(DateTime, default=datetime.now(), nullable=False)
+    modified_datetime_utc = Column(DateTime)
     id_deleted = Column(Boolean, default=False)
 
-    # Relationship to roles if needed
     role_obj = relationship("RolesDict", backref="parents")
 
 
@@ -43,8 +38,8 @@ class Kids(Base):
     last_name = Column(String(100))
     birth_date = Column(DateTime)
     parent_id = Column(Integer, ForeignKey("parents.id"))
-    create_datetime = Column(DateTime, default=utcnow, nullable=False)
-    modify_datetime = Column(DateTime)
+    created_datetime_utc = Column(DateTime, default=datetime.now(), nullable=False)
+    modified_datetime_utc = Column(DateTime)
     id_deleted = Column(Boolean, default=False)
 
     parent = relationship("Parents", backref="kids")
@@ -57,8 +52,8 @@ class KidsStaticDetails(Base):
     datestamp = Column(DateTime, nullable=False)
     quantity = Column(Float, nullable=False)
     unit_id = Column(Integer, ForeignKey("units_dict.id"), nullable=False)
-    create_datetime = Column(DateTime, default=utcnow, nullable=False)
-    modify_datetime = Column(DateTime)
+    created_datetime_utc = Column(DateTime, default=datetime.now(), nullable=False)
+    modified_datetime_utc = Column(DateTime)
     kid_id = Column(Integer, ForeignKey("kids.id"), nullable=False)
 
     unit = relationship("UnitsDict", backref="kids_static_details")
@@ -96,8 +91,8 @@ class KidsEvents(Base):
     id = Column(Integer, primary_key=True, index=True)
     event_id = Column(Integer, ForeignKey("kids_event_dict.id"), nullable=False)
     timestamp = Column(DateTime, nullable=False)
-    create_datetime = Column(DateTime, default=utcnow, nullable=False)
-    modify_datetime = Column(DateTime)
+    created_datetime_utc = Column(DateTime, default=datetime.now(), nullable=False)
+    modified_datetime_utc = Column(DateTime)
     id_deleted = Column(Boolean, default=False)
 
     event_type = relationship("KidsEventsDict", backref="events")
