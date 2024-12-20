@@ -15,8 +15,10 @@ class Parents(Base):
     hashed_password = Column(String, nullable=False)
     is_active = Column(Boolean, default=True)
     role = Column(Integer, ForeignKey("roles_dict.id"))
-    created_datetime_utc = Column(DateTime, default=datetime.now(), nullable=False)
-    modified_datetime_utc = Column(DateTime)
+    created_datetime = Column(
+        DateTime(timezone=True), default=datetime.now(), nullable=False
+    )
+    modified_datetime = Column(DateTime(timezone=True))
     id_deleted = Column(Boolean, default=False)
 
     role_obj = relationship("RolesDict", backref="parents")
@@ -39,7 +41,7 @@ class Kids(Base):
     birth_date = Column(DateTime)
     parent_id = Column(Integer, ForeignKey("parents.id"))
     created_datetime_utc = Column(DateTime, default=datetime.now(), nullable=False)
-    modified_datetime_utc = Column(DateTime)
+    modified_datetime = Column(DateTime)
     id_deleted = Column(Boolean, default=False)
 
     parent = relationship("Parents", backref="kids")
@@ -53,7 +55,7 @@ class KidsStaticDetails(Base):
     quantity = Column(Float, nullable=False)
     unit_id = Column(Integer, ForeignKey("units_dict.id"), nullable=False)
     created_datetime_utc = Column(DateTime, default=datetime.now(), nullable=False)
-    modified_datetime_utc = Column(DateTime)
+    modified_datetime = Column(DateTime)
     kid_id = Column(Integer, ForeignKey("kids.id"), nullable=False)
 
     unit = relationship("UnitsDict", backref="kids_static_details")
@@ -92,7 +94,7 @@ class KidsEvents(Base):
     event_id = Column(Integer, ForeignKey("kids_event_dict.id"), nullable=False)
     timestamp = Column(DateTime, nullable=False)
     created_datetime_utc = Column(DateTime, default=datetime.now(), nullable=False)
-    modified_datetime_utc = Column(DateTime)
+    modified_datetime = Column(DateTime)
     id_deleted = Column(Boolean, default=False)
 
     event_type = relationship("KidsEventsDict", backref="events")
