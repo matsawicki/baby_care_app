@@ -1,5 +1,5 @@
 from database import Base
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import Column, Integer, String, Boolean, DateTime, Float, ForeignKey
 from sqlalchemy.orm import relationship, backref
 
@@ -7,19 +7,18 @@ from sqlalchemy.orm import relationship, backref
 class Parents(Base):
     __tablename__ = "parents"
 
-    id = Column(Integer, primary_key=True, index=True)
-    email = Column(String, unique=True)
+    id = Column(Integer, primary_key=True)
+    email = Column(String, unique=True, nullable=False)
     username = Column(String, unique=True)
     first_name = Column(String(100), nullable=False)
     last_name = Column(String(100))
     hashed_password = Column(String, nullable=False)
-    is_active = Column(Boolean, default=True)
     role = Column(Integer, ForeignKey("roles_dict.id"))
     created_datetime = Column(
-        DateTime(timezone=True), default=datetime.now(), nullable=False
+        DateTime, default=datetime.now(timezone.utc), nullable=False
     )
-    modified_datetime = Column(DateTime(timezone=True))
-    id_deleted = Column(Boolean, default=False)
+    modified_datetime = Column(DateTime)
+    id_deleted = Column(Boolean, default=False, nullable=False)
 
     role_obj = relationship("RolesDict", backref="parents")
 
@@ -29,7 +28,7 @@ class RolesDict(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     role_name = Column(String, nullable=False)
-    is_active = Column(Boolean, default=True)
+    is_deleted = Column(Boolean, default=False)
 
 
 class Kids(Base):
@@ -40,9 +39,11 @@ class Kids(Base):
     last_name = Column(String(100))
     birth_date = Column(DateTime)
     parent_id = Column(Integer, ForeignKey("parents.id"))
-    created_datetime_utc = Column(DateTime, default=datetime.now(), nullable=False)
+    created_datetime = Column(
+        DateTime, default=datetime.now(timezone.utc), nullable=False
+    )
     modified_datetime = Column(DateTime)
-    id_deleted = Column(Boolean, default=False)
+    id_deleted = Column(Boolean, default=False, nullable=False)
 
     parent = relationship("Parents", backref="kids")
 
@@ -51,10 +52,11 @@ class KidsStaticDetails(Base):
     __tablename__ = "kids_static_details"
 
     id = Column(Integer, primary_key=True, index=True)
-    datestamp = Column(DateTime, nullable=False)
     quantity = Column(Float, nullable=False)
     unit_id = Column(Integer, ForeignKey("units_dict.id"), nullable=False)
-    created_datetime_utc = Column(DateTime, default=datetime.now(), nullable=False)
+    created_datetime = Column(
+        DateTime, default=datetime.now(timezone.utc), nullable=False
+    )
     modified_datetime = Column(DateTime)
     kid_id = Column(Integer, ForeignKey("kids.id"), nullable=False)
 
@@ -67,7 +69,7 @@ class KidsStaticDetailsDict(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, nullable=False)
-    is_active = Column(Boolean, default=True)
+    is_deleted = Column(Boolean, default=False, nullable=False)
 
 
 class KidsEventsDict(Base):
@@ -75,7 +77,7 @@ class KidsEventsDict(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     event_name = Column(String, nullable=False)
-    is_active = Column(Boolean, default=True)
+    is_deleted = Column(Boolean, default=False, nullable=False)
     # Possible values for event_name: "poo", "piss", "feeding", "saturation"
 
 
@@ -84,7 +86,7 @@ class UnitsDict(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     unit_name = Column(String, nullable=False)
-    is_active = Column(Boolean, default=True)
+    is_deleted = Column(Boolean, default=False, nullable=False)
 
 
 class KidsEvents(Base):
@@ -93,9 +95,11 @@ class KidsEvents(Base):
     id = Column(Integer, primary_key=True, index=True)
     event_id = Column(Integer, ForeignKey("kids_event_dict.id"), nullable=False)
     timestamp = Column(DateTime, nullable=False)
-    created_datetime_utc = Column(DateTime, default=datetime.now(), nullable=False)
+    created_datetime = Column(
+        DateTime, default=datetime.now(timezone.utc), nullable=False
+    )
     modified_datetime = Column(DateTime)
-    id_deleted = Column(Boolean, default=False)
+    is_deleted = Column(Boolean, default=False, nullable=False)
 
     event_type = relationship("KidsEventsDict", backref="events")
 
@@ -108,7 +112,11 @@ class PooEvents(Base):
         Integer, ForeignKey("kids_events.id"), nullable=False, unique=True
     )
     value = Column(Boolean, nullable=False)  # True if poo happened, for example
-
+    created_datetime = Column(
+        DateTime, default=datetime.now(timezone.utc), nullable=False
+    )
+    modified_datetime = Column(DateTime)
+    is_deleted = Column(Boolean, default=False, nullable=False)
     kids_event = relationship(
         "KidsEvents", backref=backref("poo_detail", uselist=False)
     )
@@ -123,6 +131,11 @@ class PissEvents(Base):
     )
     unit_id = Column(Integer, ForeignKey("units_dict.id"), nullable=False)
     value = Column(Float, nullable=False)  # Amount of piss measured
+    created_datetime = Column(
+        DateTime, default=datetime.now(timezone.utc), nullable=False
+    )
+    modified_datetime = Column(DateTime)
+    is_deleted = Column(Boolean, default=False, nullable=False)
 
     kids_event = relationship(
         "KidsEvents", backref=backref("piss_detail", uselist=False)
@@ -139,7 +152,11 @@ class FeedingEvents(Base):
     )
     unit_id = Column(Integer, ForeignKey("units_dict.id"), nullable=False)
     amount = Column(Float, nullable=False)  # e.g. milliliters of milk
-
+    created_datetime = Column(
+        DateTime, default=datetime.now(timezone.utc), nullable=False
+    )
+    modified_datetime = Column(DateTime)
+    is_deleted = Column(Boolean, default=False, nullable=False)
     kids_event = relationship(
         "KidsEvents", backref=backref("feeding_detail", uselist=False)
     )
@@ -154,7 +171,11 @@ class SaturationEvents(Base):
         Integer, ForeignKey("kids_events.id"), nullable=False, unique=True
     )
     saturation_value = Column(Float, nullable=False)  # e.g. O2 saturation %
-
+    created_datetime = Column(
+        DateTime, default=datetime.now(timezone.utc), nullable=False
+    )
+    modified_datetime = Column(DateTime)
+    is_deleted = Column(Boolean, default=False, nullable=False)
     kids_event = relationship(
         "KidsEvents", backref=backref("saturation_detail", uselist=False)
     )
