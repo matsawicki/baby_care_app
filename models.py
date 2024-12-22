@@ -1,10 +1,19 @@
 from database import Base
 from datetime import datetime, timezone
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, Float, ForeignKey
+from sqlalchemy import (
+    Column,
+    Integer,
+    String,
+    Boolean,
+    DateTime,
+    Float,
+    ForeignKey,
+    func,
+)
 from sqlalchemy.orm import relationship, backref
 
 
-class Parents(Base):
+class Parent(Base):
     __tablename__ = "parents"
 
     id = Column(Integer, primary_key=True)
@@ -13,28 +22,89 @@ class Parents(Base):
     first_name = Column(String(100), nullable=False)
     last_name = Column(String(100))
     hashed_password = Column(String, nullable=False)
-    role = Column(Integer, ForeignKey("roles_dict.id"))
+    role = Column(Integer, ForeignKey("role_dicts.id"))  # points to RoleDict
     created_datetime = Column(
         DateTime, default=datetime.now(timezone.utc), nullable=False
     )
-    modified_datetime = Column(DateTime)
-    id_deleted = Column(Boolean, default=False, nullable=False)
+    modified_datetime = Column(
+        DateTime, default=None, onupdate=datetime.now(timezone.utc)
+    )
+    is_deleted = Column(Boolean, default=False, nullable=False)
 
-    role_obj = relationship("RolesDict", backref="parents")
+    role_obj = relationship("RoleDict", backref="parents")
 
 
-class RolesDict(Base):
+class KidPermission(Base):
+    """
+    Once an invitation is accepted, this table tracks which parent/guardian
+    has what role/permission on a given kid.
+    """
+
+    __tablename__ = "kid_permissions"
+
+    id = Column(Integer, primary_key=True)
+    kid_id = Column(Integer, ForeignKey("kids.id"), nullable=False)
+    parent_id = Column(Integer, ForeignKey("parents.id"), nullable=False)
+    role_id = Column(Integer, ForeignKey("role_dicts.id"), nullable=False)
+    created_datetime = Column(
+        DateTime, default=datetime.now(timezone.utc), nullable=False
+    )
+    modified_datetime = Column(
+        DateTime, default=None, onupdate=datetime.now(timezone.utc)
+    )
+    is_deleted = Column(Boolean, default=False, nullable=False)
+
+    kid = relationship("Kid", backref="permissions")
+    parent = relationship("Parent", backref="kid_permissions")
+    role_obj = relationship("RoleDict", backref="kid_permissions")
+
+
+class KidInvitation(Base):
+    """
+    Holds invitations for a parent or any user to gain access to a kid.
+    The inviter defines the role (from RoleDict) and invites by email.
+    Once accepted, an entry in KidPermission can be created.
+    """
+
+    __tablename__ = "kid_invitations"
+
+    id = Column(Integer, primary_key=True)
+    kid_id = Column(Integer, ForeignKey("kids.id"), nullable=False)
+    inviter_parent_id = Column(Integer, ForeignKey("parents.id"), nullable=False)
+    invited_email = Column(String, nullable=False)
+    role_id = Column(Integer, ForeignKey("role_dicts.id"), nullable=False)
+    invitation_token = Column(String, unique=True, nullable=False)
+    is_accepted = Column(Boolean, default=False, nullable=False)
+
+    created_datetime = Column(
+        DateTime, default=datetime.now(timezone.utc), nullable=False
+    )
+    accepted_datetime = Column(DateTime, default=None)
+    is_deleted = Column(Boolean, default=False, nullable=False)
+
+    kid = relationship("Kid", backref="invitations")
+    inviter = relationship("Parent", backref="sent_invitations")
+    role_obj = relationship("RoleDict", backref="kid_invitations")
+
+
+class RoleDict(Base):
     __tablename__ = "roles_dict"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True)
     role_name = Column(String, nullable=False)
+    created_datetime = Column(
+        DateTime, default=datetime.now(timezone.utc), nullable=False
+    )
+    modified_datetime = Column(
+        DateTime, default=None, onupdate=datetime.now(timezone.utc)
+    )
     is_deleted = Column(Boolean, default=False)
 
 
-class Kids(Base):
+class Kid(Base):
     __tablename__ = "kids"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True)
     first_name = Column(String(100), nullable=False)
     last_name = Column(String(100))
     birth_date = Column(DateTime)
@@ -42,140 +112,189 @@ class Kids(Base):
     created_datetime = Column(
         DateTime, default=datetime.now(timezone.utc), nullable=False
     )
-    modified_datetime = Column(DateTime)
-    id_deleted = Column(Boolean, default=False, nullable=False)
+    modified_datetime = Column(
+        DateTime, default=None, onupdate=datetime.now(timezone.utc)
+    )
+    is_deleted = Column(Boolean, default=False, nullable=False)
 
-    parent = relationship("Parents", backref="kids")
+    parent = relationship("Parent", backref="kids")
 
 
-class KidsStaticDetails(Base):
-    __tablename__ = "kids_static_details"
+class KidStaticDetailDict(Base):
+    """
+    Dictionary table for 'type' of static detail, e.g., 'Height', 'Weight', etc.
+    """
 
-    id = Column(Integer, primary_key=True, index=True)
-    quantity = Column(Float, nullable=False)
-    unit_id = Column(Integer, ForeignKey("units_dict.id"), nullable=False)
+    __tablename__ = "kid_static_details_dict"
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String, nullable=False)
     created_datetime = Column(
         DateTime, default=datetime.now(timezone.utc), nullable=False
     )
-    modified_datetime = Column(DateTime)
+    modified_datetime = Column(
+        DateTime, default=None, onupdate=datetime.now(timezone.utc)
+    )
+    is_deleted = Column(Boolean, default=False, nullable=False)
+
+
+class KidStaticDetail(Base):
+    __tablename__ = "kid_static_details"
+
+    id = Column(Integer, primary_key=True)
+    quantity = Column(Float, nullable=False)
+    unit_id = Column(Integer, ForeignKey("unit_dicts.id"), nullable=False)
+    kid_id = Column(Integer, ForeignKey("kids.id"), nullable=False)
+    # Reference to kid_static_detail_dict
+    detail_type_id = Column(
+        Integer, ForeignKey("kid_static_detail_dicts.id"), nullable=True
+    )
+
+    created_datetime = Column(
+        DateTime, default=datetime.now(timezone.utc), nullable=False
+    )
+    modified_datetime = Column(
+        DateTime, default=None, onupdate=datetime.now(timezone.utc)
+    )
+    is_deleted = Column(Boolean, default=False, nullable=False)
+
+    unit = relationship("UnitDict", backref="kid_static_details")
+    kid = relationship("Kid", backref="static_details")
+    detail_type = relationship("KidStaticDetailDict", backref="static_details")
+
+
+class KidEventDict(Base):
+    __tablename__ = "kid_events_dict"
+
+    id = Column(Integer, primary_key=True)
+    event_name = Column(String, nullable=False)
+    created_datetime = Column(
+        DateTime, default=datetime.now(timezone.utc), nullable=False
+    )
+    modified_datetime = Column(
+        DateTime, default=None, onupdate=datetime.now(timezone.utc)
+    )
+    is_deleted = Column(Boolean, default=False, nullable=False)
+
+
+class UnitDict(Base):
+    __tablename__ = "units_dicts"
+
+    id = Column(Integer, primary_key=True)
+    unit_name = Column(String, nullable=False)
+    created_datetime = Column(
+        DateTime, default=datetime.now(timezone.utc), nullable=False
+    )
+    modified_datetime = Column(
+        DateTime, default=None, onupdate=datetime.now(timezone.utc)
+    )
+    is_deleted = Column(Boolean, default=False, nullable=False)
+
+
+class KidEvent(Base):
+    __tablename__ = "kid_events"
+
+    id = Column(Integer, primary_key=True)
+    event_id = Column(Integer, ForeignKey("kid_event_dicts.id"), nullable=False)
     kid_id = Column(Integer, ForeignKey("kids.id"), nullable=False)
 
-    unit = relationship("UnitsDict", backref="kids_static_details")
-    kid = relationship("Kids", backref="static_details")
-
-
-class KidsStaticDetailsDict(Base):
-    __tablename__ = "kids_static_details_dict"
-
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, nullable=False)
-    is_deleted = Column(Boolean, default=False, nullable=False)
-
-
-class KidsEventsDict(Base):
-    __tablename__ = "kids_event_dict"
-
-    id = Column(Integer, primary_key=True, index=True)
-    event_name = Column(String, nullable=False)
-    is_deleted = Column(Boolean, default=False, nullable=False)
-    # Possible values for event_name: "poo", "piss", "feeding", "saturation"
-
-
-class UnitsDict(Base):
-    __tablename__ = "units_dict"
-
-    id = Column(Integer, primary_key=True, index=True)
-    unit_name = Column(String, nullable=False)
-    is_deleted = Column(Boolean, default=False, nullable=False)
-
-
-class KidsEvents(Base):
-    __tablename__ = "kids_events"
-
-    id = Column(Integer, primary_key=True, index=True)
-    event_id = Column(Integer, ForeignKey("kids_event_dict.id"), nullable=False)
     timestamp = Column(DateTime, nullable=False)
     created_datetime = Column(
         DateTime, default=datetime.now(timezone.utc), nullable=False
     )
-    modified_datetime = Column(DateTime)
+    modified_datetime = Column(
+        DateTime, default=None, onupdate=datetime.now(timezone.utc)
+    )
     is_deleted = Column(Boolean, default=False, nullable=False)
 
-    event_type = relationship("KidsEventsDict", backref="events")
+    event_type = relationship("KidEventDict", backref="kid_events")
+    kid = relationship("Kid", backref="events")
 
 
-class PooEvents(Base):
+class PooEvent(Base):
     __tablename__ = "poo_events"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True)
     kids_event_id = Column(
-        Integer, ForeignKey("kids_events.id"), nullable=False, unique=True
+        Integer, ForeignKey("kid_events.id"), nullable=False, unique=True
     )
-    value = Column(Boolean, nullable=False)  # True if poo happened, for example
+    # e.g., True if poo happened
+    value = Column(Boolean, nullable=False)
+
     created_datetime = Column(
         DateTime, default=datetime.now(timezone.utc), nullable=False
     )
-    modified_datetime = Column(DateTime)
-    is_deleted = Column(Boolean, default=False, nullable=False)
-    kids_event = relationship(
-        "KidsEvents", backref=backref("poo_detail", uselist=False)
+    modified_datetime = Column(
+        DateTime, default=None, onupdate=datetime.now(timezone.utc)
     )
+    is_deleted = Column(Boolean, default=False, nullable=False)
+
+    kids_event = relationship("KidEvent", backref=backref("poo_detail", uselist=False))
 
 
-class PissEvents(Base):
+class PissEvent(Base):
     __tablename__ = "piss_events"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True)
     kids_event_id = Column(
-        Integer, ForeignKey("kids_events.id"), nullable=False, unique=True
+        Integer, ForeignKey("kid_events.id"), nullable=False, unique=True
     )
-    unit_id = Column(Integer, ForeignKey("units_dict.id"), nullable=False)
+    unit_id = Column(Integer, ForeignKey("unit_dicts.id"), nullable=False)
     value = Column(Float, nullable=False)  # Amount of piss measured
+
     created_datetime = Column(
         DateTime, default=datetime.now(timezone.utc), nullable=False
     )
-    modified_datetime = Column(DateTime)
+    modified_datetime = Column(
+        DateTime, default=None, onupdate=datetime.now(timezone.utc)
+    )
     is_deleted = Column(Boolean, default=False, nullable=False)
 
-    kids_event = relationship(
-        "KidsEvents", backref=backref("piss_detail", uselist=False)
-    )
-    unit = relationship("UnitsDict")
+    kids_event = relationship("KidEvent", backref=backref("piss_detail", uselist=False))
+    unit = relationship("UnitDict")
 
 
-class FeedingEvents(Base):
+class FeedingEvent(Base):
     __tablename__ = "feeding_events"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True)
     kids_event_id = Column(
-        Integer, ForeignKey("kids_events.id"), nullable=False, unique=True
+        Integer, ForeignKey("kid_events.id"), nullable=False, unique=True
     )
-    unit_id = Column(Integer, ForeignKey("units_dict.id"), nullable=False)
+    unit_id = Column(Integer, ForeignKey("unit_dicts.id"), nullable=False)
     amount = Column(Float, nullable=False)  # e.g. milliliters of milk
+
     created_datetime = Column(
         DateTime, default=datetime.now(timezone.utc), nullable=False
     )
-    modified_datetime = Column(DateTime)
-    is_deleted = Column(Boolean, default=False, nullable=False)
-    kids_event = relationship(
-        "KidsEvents", backref=backref("feeding_detail", uselist=False)
+    modified_datetime = Column(
+        DateTime, default=None, onupdate=datetime.now(timezone.utc)
     )
-    unit = relationship("UnitsDict")
+    is_deleted = Column(Boolean, default=False, nullable=False)
+
+    kids_event = relationship(
+        "KidEvent", backref=backref("feeding_detail", uselist=False)
+    )
+    unit = relationship("UnitDict")
 
 
-class SaturationEvents(Base):
+class SaturationEvent(Base):
     __tablename__ = "saturation_events"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True)
     kids_event_id = Column(
-        Integer, ForeignKey("kids_events.id"), nullable=False, unique=True
+        Integer, ForeignKey("kid_events.id"), nullable=False, unique=True
     )
     saturation_value = Column(Float, nullable=False)  # e.g. O2 saturation %
+
     created_datetime = Column(
         DateTime, default=datetime.now(timezone.utc), nullable=False
     )
-    modified_datetime = Column(DateTime)
+    modified_datetime = Column(
+        DateTime, default=None, onupdate=datetime.now(timezone.utc)
+    )
     is_deleted = Column(Boolean, default=False, nullable=False)
+
     kids_event = relationship(
-        "KidsEvents", backref=backref("saturation_detail", uselist=False)
+        "KidEvent", backref=backref("saturation_detail", uselist=False)
     )
