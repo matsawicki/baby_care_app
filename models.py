@@ -1,5 +1,5 @@
 from database import Base
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from sqlalchemy import (
     Column,
     Integer,
@@ -8,7 +8,6 @@ from sqlalchemy import (
     DateTime,
     Float,
     ForeignKey,
-    func,
 )
 from sqlalchemy.orm import relationship, backref
 
@@ -17,12 +16,12 @@ class Parent(Base):
     __tablename__ = "parents"
 
     id = Column(Integer, primary_key=True)
-    email = Column(String, unique=True, nullable=False)
-    username = Column(String, unique=True)
+    email = Column(String(100), unique=True, nullable=False)
+    username = Column(String(100), unique=True)
     first_name = Column(String(100), nullable=False)
     last_name = Column(String(100))
-    hashed_password = Column(String, nullable=False)
-    role = Column(Integer, ForeignKey("role_dicts.id"))  # points to RoleDict
+    hashed_password = Column(String(100), nullable=False)
+    role = Column(Integer, ForeignKey("roles_dict.id"))  # Fixed table name
     created_datetime = Column(
         DateTime, default=datetime.now(timezone.utc), nullable=False
     )
@@ -35,17 +34,12 @@ class Parent(Base):
 
 
 class KidPermission(Base):
-    """
-    Once an invitation is accepted, this table tracks which parent/guardian
-    has what role/permission on a given kid.
-    """
-
     __tablename__ = "kid_permissions"
 
     id = Column(Integer, primary_key=True)
     kid_id = Column(Integer, ForeignKey("kids.id"), nullable=False)
     parent_id = Column(Integer, ForeignKey("parents.id"), nullable=False)
-    role_id = Column(Integer, ForeignKey("role_dicts.id"), nullable=False)
+    role_id = Column(Integer, ForeignKey("roles_dict.id"), nullable=False)
     created_datetime = Column(
         DateTime, default=datetime.now(timezone.utc), nullable=False
     )
@@ -60,20 +54,19 @@ class KidPermission(Base):
 
 
 class KidInvitation(Base):
-    """
-    Holds invitations for a parent or any user to gain access to a kid.
-    The inviter defines the role (from RoleDict) and invites by email.
-    Once accepted, an entry in KidPermission can be created.
-    """
-
     __tablename__ = "kid_invitations"
 
     id = Column(Integer, primary_key=True)
     kid_id = Column(Integer, ForeignKey("kids.id"), nullable=False)
     inviter_parent_id = Column(Integer, ForeignKey("parents.id"), nullable=False)
-    invited_email = Column(String, nullable=False)
-    role_id = Column(Integer, ForeignKey("role_dicts.id"), nullable=False)
-    invitation_token = Column(String, unique=True, nullable=False)
+    invited_email = Column(String(100), nullable=False)
+    role_id = Column(Integer, ForeignKey("roles_dict.id"), nullable=False)
+    invitation_token = Column(String(100), unique=True, nullable=False)
+    expiration_datetime = Column(
+        DateTime,
+        default=lambda: datetime.now(timezone.utc) + timedelta(hours=72),
+        nullable=False,
+    )
     is_accepted = Column(Boolean, default=False, nullable=False)
 
     created_datetime = Column(
@@ -82,8 +75,8 @@ class KidInvitation(Base):
     accepted_datetime = Column(DateTime, default=None)
     is_deleted = Column(Boolean, default=False, nullable=False)
 
-    kid = relationship("Kid", backref="invitations")
-    inviter = relationship("Parent", backref="sent_invitations")
+    kid = relationship("Kid", backref="kid_invitations")
+    inviter = relationship("Parent", backref="kid_invitations")
     role_obj = relationship("RoleDict", backref="kid_invitations")
 
 
@@ -91,7 +84,7 @@ class RoleDict(Base):
     __tablename__ = "roles_dict"
 
     id = Column(Integer, primary_key=True)
-    role_name = Column(String, nullable=False)
+    role_name = Column(String(100), nullable=False)
     created_datetime = Column(
         DateTime, default=datetime.now(timezone.utc), nullable=False
     )
@@ -121,14 +114,10 @@ class Kid(Base):
 
 
 class KidStaticDetailDict(Base):
-    """
-    Dictionary table for 'type' of static detail, e.g., 'Height', 'Weight', etc.
-    """
-
     __tablename__ = "kid_static_details_dict"
 
     id = Column(Integer, primary_key=True)
-    name = Column(String, nullable=False)
+    name = Column(String(100), nullable=False)
     created_datetime = Column(
         DateTime, default=datetime.now(timezone.utc), nullable=False
     )
@@ -143,13 +132,11 @@ class KidStaticDetail(Base):
 
     id = Column(Integer, primary_key=True)
     quantity = Column(Float, nullable=False)
-    unit_id = Column(Integer, ForeignKey("unit_dicts.id"), nullable=False)
+    unit_id = Column(Integer, ForeignKey("units_dict.id"), nullable=False)  # Fixed table name
     kid_id = Column(Integer, ForeignKey("kids.id"), nullable=False)
-    # Reference to kid_static_detail_dict
     detail_type_id = Column(
-        Integer, ForeignKey("kid_static_detail_dicts.id"), nullable=True
+        Integer, ForeignKey("kid_static_details_dict.id"), nullable=True
     )
-
     created_datetime = Column(
         DateTime, default=datetime.now(timezone.utc), nullable=False
     )
@@ -178,10 +165,10 @@ class KidEventDict(Base):
 
 
 class UnitDict(Base):
-    __tablename__ = "units_dicts"
+    __tablename__ = "units_dict"
 
     id = Column(Integer, primary_key=True)
-    unit_name = Column(String, nullable=False)
+    unit_name = Column(String(100), nullable=False)
     created_datetime = Column(
         DateTime, default=datetime.now(timezone.utc), nullable=False
     )
@@ -195,9 +182,8 @@ class KidEvent(Base):
     __tablename__ = "kid_events"
 
     id = Column(Integer, primary_key=True)
-    event_id = Column(Integer, ForeignKey("kid_event_dicts.id"), nullable=False)
+    event_id = Column(Integer, ForeignKey("kid_events_dict.id"), nullable=False)
     kid_id = Column(Integer, ForeignKey("kids.id"), nullable=False)
-
     timestamp = Column(DateTime, nullable=False)
     created_datetime = Column(
         DateTime, default=datetime.now(timezone.utc), nullable=False
@@ -208,7 +194,6 @@ class KidEvent(Base):
     is_deleted = Column(Boolean, default=False, nullable=False)
 
     event_type = relationship("KidEventDict", backref="kid_events")
-    kid = relationship("Kid", backref="events")
 
 
 class PooEvent(Base):
@@ -218,9 +203,7 @@ class PooEvent(Base):
     kids_event_id = Column(
         Integer, ForeignKey("kid_events.id"), nullable=False, unique=True
     )
-    # e.g., True if poo happened
     value = Column(Boolean, nullable=False)
-
     created_datetime = Column(
         DateTime, default=datetime.now(timezone.utc), nullable=False
     )
@@ -239,9 +222,8 @@ class PissEvent(Base):
     kids_event_id = Column(
         Integer, ForeignKey("kid_events.id"), nullable=False, unique=True
     )
-    unit_id = Column(Integer, ForeignKey("unit_dicts.id"), nullable=False)
-    value = Column(Float, nullable=False)  # Amount of piss measured
-
+    unit_id = Column(Integer, ForeignKey("units_dict.id"), nullable=False)  # Fixed table name
+    value = Column(Float, nullable=False)
     created_datetime = Column(
         DateTime, default=datetime.now(timezone.utc), nullable=False
     )
@@ -261,9 +243,8 @@ class FeedingEvent(Base):
     kids_event_id = Column(
         Integer, ForeignKey("kid_events.id"), nullable=False, unique=True
     )
-    unit_id = Column(Integer, ForeignKey("unit_dicts.id"), nullable=False)
-    amount = Column(Float, nullable=False)  # e.g. milliliters of milk
-
+    unit_id = Column(Integer, ForeignKey("units_dict.id"), nullable=False)  # Fixed table name
+    amount = Column(Float, nullable=False)
     created_datetime = Column(
         DateTime, default=datetime.now(timezone.utc), nullable=False
     )
@@ -285,8 +266,7 @@ class SaturationEvent(Base):
     kids_event_id = Column(
         Integer, ForeignKey("kid_events.id"), nullable=False, unique=True
     )
-    saturation_value = Column(Float, nullable=False)  # e.g. O2 saturation %
-
+    saturation_value = Column(Float, nullable=False)
     created_datetime = Column(
         DateTime, default=datetime.now(timezone.utc), nullable=False
     )
