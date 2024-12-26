@@ -10,7 +10,7 @@ class Enum(Base):
     __tablename__ = "enum"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    table_name = Column(String(100), nullable=False)
+    enum_name = Column(String(100), nullable=False)
     name = Column(String(100), nullable=False)
     created_datetime = Column(
         DateTime, default=datetime.now(timezone.utc), nullable=False
@@ -25,7 +25,7 @@ class EnumHistory(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     enum_id = Column(UUID(as_uuid=True), nullable=False)
-    table_name = Column(String(100), nullable=False)
+    enum_name = Column(String(100), nullable=False)
     name = Column(String(100), nullable=False)
     created_datetime = Column(
         DateTime, default=datetime.now(timezone.utc), nullable=False
@@ -125,7 +125,7 @@ class Event(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     kid_id = Column(UUID(as_uuid=True), ForeignKey("kid.id"), nullable=False)
-    event_id = Column(UUID(as_uuid=True), ForeignKey("enum.id"), nullable=False)
+    event_type_id = Column(UUID(as_uuid=True), ForeignKey("enum.id"), nullable=False)
     timestamp = Column(DateTime, nullable=False)
     string_value = Column(String(255))
     float_value = Column(Float)
