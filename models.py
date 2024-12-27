@@ -11,7 +11,7 @@ class Enum(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     enum_name = Column(String(100), nullable=False)
-    name = Column(String(100), nullable=False)
+    name = Column(String(100), unique=True, nullable=False)
     created_datetime = Column(
         DateTime, default=datetime.now(timezone.utc), nullable=False
     )
