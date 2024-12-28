@@ -1,15 +1,14 @@
 from database import Base
 from datetime import datetime, timezone, timedelta
 from sqlalchemy import Column, String, Boolean, DateTime, Float, ForeignKey, Integer
-from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import relationship, backref
+from sqlalchemy.orm import relationship
 import uuid
 
 
 class Enum(Base):
     __tablename__ = "enum"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(String(100), primary_key=True, default=lambda: str(uuid.uuid4()))
     enum_name = Column(String(100), nullable=False)
     name = Column(String(100), unique=True, nullable=False)
     created_datetime = Column(
@@ -23,15 +22,15 @@ class Enum(Base):
 class EnumHistory(Base):
     __tablename__ = "enum_history"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    enum_id = Column(UUID(as_uuid=True), nullable=False)
+    id = Column(String(100), primary_key=True, default=lambda: str(uuid.uuid4()))
+    enum_id = Column(String(100), nullable=False)
     enum_name = Column(String(100), nullable=False)
     name = Column(String(100), nullable=False)
-    created_datetime = Column(
+    valid_from = Column(
         DateTime, default=datetime.now(timezone.utc), nullable=False
     )
-    modified_datetime = Column(
-        DateTime, default=None, onupdate=datetime.now(timezone.utc)
+    valid_to = Column(
+        DateTime
     )
     is_deleted = Column(Boolean, default=False, nullable=False)
 
@@ -39,13 +38,13 @@ class EnumHistory(Base):
 class Parent(Base):
     __tablename__ = "parent"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(String(100), primary_key=True, default=lambda: str(uuid.uuid4()))
     email = Column(String(100), unique=True, nullable=False)
     username = Column(String(100), unique=True)
     first_name = Column(String(100), nullable=False)
     last_name = Column(String(100))
     hashed_password = Column(String(100), nullable=False)
-    role = Column(UUID(as_uuid=True), ForeignKey("enum.id"))
+    role = Column(String(100), ForeignKey("enum.id"))
     created_datetime = Column(
         DateTime, default=datetime.now(timezone.utc), nullable=False
     )
@@ -58,11 +57,11 @@ class Parent(Base):
 class Kid(Base):
     __tablename__ = "kid"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(String(100), primary_key=True, default=lambda: str(uuid.uuid4()))
     first_name = Column(String(100), nullable=False)
     last_name = Column(String(100))
     birth_date = Column(DateTime)
-    parent_id = Column(UUID(as_uuid=True), ForeignKey("parent.id"))
+    parent_id = Column(String(100), ForeignKey("parent.id"))
     created_datetime = Column(
         DateTime, default=datetime.now(timezone.utc), nullable=False
     )
@@ -77,10 +76,10 @@ class Kid(Base):
 class KidPermission(Base):
     __tablename__ = "kid_permission"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    kid_id = Column(UUID(as_uuid=True), ForeignKey("kid.id"), nullable=False)
-    parent_id = Column(UUID(as_uuid=True), ForeignKey("parent.id"), nullable=False)
-    role_id = Column(UUID(as_uuid=True), ForeignKey("enum.id"), nullable=False)
+    id = Column(String(100), primary_key=True, default=lambda: str(uuid.uuid4()))
+    kid_id = Column(String(100), ForeignKey("kid.id"), nullable=False)
+    parent_id = Column(String(100), ForeignKey("parent.id"), nullable=False)
+    role_id = Column(String(100), ForeignKey("enum.id"), nullable=False)
     created_datetime = Column(
         DateTime, default=datetime.now(timezone.utc), nullable=False
     )
@@ -96,13 +95,11 @@ class KidPermission(Base):
 class KidInvitation(Base):
     __tablename__ = "kid_invitation"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    kid_id = Column(UUID(as_uuid=True), ForeignKey("kid.id"), nullable=False)
-    inviter_parent_id = Column(
-        UUID(as_uuid=True), ForeignKey("parent.id"), nullable=False
-    )
+    id = Column(String(100), primary_key=True, default=lambda: str(uuid.uuid4()))
+    kid_id = Column(String(100), ForeignKey("kid.id"), nullable=False)
+    inviter_parent_id = Column(String(100), ForeignKey("parent.id"), nullable=False)
     invited_email = Column(String(100), nullable=False)
-    role_id = Column(UUID(as_uuid=True), ForeignKey("enum.id"), nullable=False)
+    role_id = Column(String(100), ForeignKey("enum.id"), nullable=False)
     invitation_token = Column(String(100), unique=True, nullable=False)
     expiration_datetime = Column(
         DateTime,
@@ -123,15 +120,15 @@ class KidInvitation(Base):
 class Event(Base):
     __tablename__ = "event"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    kid_id = Column(UUID(as_uuid=True), ForeignKey("kid.id"), nullable=False)
-    event_type_id = Column(UUID(as_uuid=True), ForeignKey("enum.id"), nullable=False)
+    id = Column(String(100), primary_key=True, default=lambda: str(uuid.uuid4()))
+    kid_id = Column(String(100), ForeignKey("kid.id"), nullable=False)
+    event_type_id = Column(String(100), ForeignKey("enum.id"), nullable=False)
     timestamp = Column(DateTime, nullable=False)
     string_value = Column(String(255))
     float_value = Column(Float)
     bool_value = Column(Boolean)
     int_value = Column(Integer)
-    unit_id = Column(UUID(as_uuid=True), ForeignKey("enum.id"))
+    unit_id = Column(String(100), ForeignKey("enum.id"))
 
     created_datetime = Column(
         DateTime, default=datetime.now(timezone.utc), nullable=False
