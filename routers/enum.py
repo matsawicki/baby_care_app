@@ -9,7 +9,11 @@ from models import Enum, EnumHistory
 from datetime import datetime, timezone
 import uuid
 
-router = APIRouter()
+router = APIRouter(
+    prefix="/enum",
+    tags=["enum"],
+    responses={404: {"description": "Not found"}}
+)
 
 
 def get_db():
