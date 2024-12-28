@@ -4,10 +4,9 @@ from sqlalchemy.exc import IntegrityError
 from pydantic import BaseModel, Field, EmailStr
 from database import SessionLocal
 from models import Parent
-from datetime import datetime, timezone
+from datetime import datetime
 from passlib.context import CryptContext
 from typing import Optional
-import uuid
 
 router = APIRouter(
     prefix="/parent", tags=["parent"], responses={404: {"description": "Not found"}}
@@ -57,14 +56,12 @@ async def post_parent(parent_request: ParentCreateRequest, db: Session = db_depe
     hashed_password = pwd_context.hash(parent_request.password)
 
     new_parent = Parent(
-        id=str(uuid.uuid4()),
         email=parent_request.email,
         username=parent_request.username,
         first_name=parent_request.first_name,
         last_name=parent_request.last_name,
         hashed_password=hashed_password,
         role=parent_request.role,
-        created_datetime=datetime.now(timezone.utc),
     )
 
     try:

@@ -7,7 +7,6 @@ from pydantic import BaseModel, Field
 from database import SessionLocal
 from models import Event
 from datetime import datetime, timezone
-import uuid
 
 router = APIRouter(
     prefix="/event",
@@ -90,7 +89,6 @@ async def get_event(id: str, db: Session = db_dependency):
 )
 async def post_event(event_request: EventCreateRequest, db: Session = db_dependency):
     new_event = Event(
-        id=str(uuid.uuid4()),
         kid_id=event_request.kid_id,
         event_type_id=event_request.event_type_id,
         timestamp=event_request.timestamp,
@@ -99,7 +97,6 @@ async def post_event(event_request: EventCreateRequest, db: Session = db_depende
         bool_value=event_request.bool_value,
         int_value=event_request.int_value,
         unit_id=event_request.unit_id,
-        created_datetime=datetime.now(timezone.utc),
     )
 
     try:
