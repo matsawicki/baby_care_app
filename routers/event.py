@@ -10,8 +10,8 @@ from datetime import datetime, timezone
 import uuid
 
 router = APIRouter(
-    prefix="/event_type",
-    tags=["event_type"],
+    prefix="/event",
+    tags=["event"],
     responses={404: {"description": "Not found"}}
 )
 
