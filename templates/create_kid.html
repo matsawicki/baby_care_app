@@ -1,0 +1,24 @@
+<!-- templates/create_kid.html -->
+{% extends "base.html" %}
+{% block content %}
+<h2>Create Kid</h2>
+<form action="/kid" method="post">
+    <label for="first_name">First Name:</label>
+    <input type="text" id="first_name" name="first_name" required>
+    <br>
+    <label for="last_name">Last Name:</label>
+    <input type="text" id="last_name" name="last_name">
+    <br>
+    <label for="birth_date">Birth Date:</label>
+    <input type="date" id="birth_date" name="birth_date">
+    <br>
+    <label for="parent_id">Parent:</label>
+    <select id="parent_id" name="parent_id">
+        {% for parent in parents %}
+        <option value="{{ parent.id }}">{{ parent.first_name }} {{ parent.last_name }}</option>
+        {% endfor %}
+    </select>
+    <br>
+    <button type="submit">Create Kid</button>
+</form>
+{% endblock %}

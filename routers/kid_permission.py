@@ -7,7 +7,11 @@ from models import KidPermission
 from datetime import datetime
 from typing import Optional
 
-router = APIRouter()
+router = APIRouter(
+    prefix="/kid_permission",
+    tags=["kid_permission"],
+    responses={404: {"description": "Not found"}}
+)
 
 def get_db():
     db = SessionLocal()

@@ -155,3 +155,4 @@ async def delete_event(id: str, db: Session = db_dependency):
     event_to_delete.modified_datetime = datetime.now(timezone.utc)
     db.commit()
     return {"message": "Event deleted successfully."}
+
