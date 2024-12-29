@@ -5,11 +5,12 @@ from datetime import datetime
 from typing import Optional
 from pydantic import BaseModel, Field
 from database import SessionLocal
-from models import Kid
+from models import Kid, Parent, KidPermission, Enum
 
 router = APIRouter(
     prefix="/kid", tags=["kid"], responses={404: {"description": "Not found"}}
 )
+
 
 def get_db():
     db = SessionLocal()
@@ -18,14 +19,16 @@ def get_db():
     finally:
         db.close()
 
+
 db_dependency = Depends(get_db)
 
-# Pydantic models for validation
+
 class KidCreateRequest(BaseModel):
     first_name: str = Field(..., max_length=100, example="John")
     last_name: Optional[str] = Field(None, max_length=100, example="Doe")
-    birth_date: Optional[datetime] = Field(None, example="2020-01-01T00:00:00Z")
-    parent_id: Optional[str] = Field(None, example="123e4567-e89b-12d3-a456-426614174000")
+    birth_date: Optional[datetime] = Field(None, example="2015-06-15T00:00:00Z")
+    parent_id: str = Field(..., example="123e4567-e89b-12d3-a456-426614174001")
+    role_id: str = Field(..., example="123e4567-e89b-12d3-a456-426614174002")
 
 
 class KidResponse(BaseModel):
@@ -51,19 +54,51 @@ async def create_kid(kid_request: KidCreateRequest, db: Session = db_dependency)
     )
 
     try:
+        # Check if the parent exists
+        parent = db.query(Parent).filter(Parent.id == kid_request.parent_id).first()
+        if not parent:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Parent ID does not exist.",
+            )
+
+        # Check if the role_id is valid
+        valid_role = db.query(Enum).filter(Enum.id == kid_request.role_id).first()
+        if not valid_role:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Provided role_id does not exist.",
+            )
+
+        # Create the new kid
         db.add(new_kid)
         db.commit()
         db.refresh(new_kid)
+
+        # Assign the permission to the parent
+        new_permission = KidPermission(
+            kid_id=new_kid.id,
+            parent_id=kid_request.parent_id,
+            role_id=kid_request.role_id,
+        )
+        db.add(new_permission)
+        db.commit()
+        db.refresh(new_permission)
+
         return new_kid
     except IntegrityError:
         db.rollback()
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Parent ID does not exist or other constraints were violated.",
+            detail="Constraints were violated, such as duplicate data.",
         )
 
 
-@router.put("/kids/{id}", response_model=KidResponse, status_code=status.HTTP_202_ACCEPTED)
+
+
+@router.put(
+    "/kids/{id}", response_model=KidResponse, status_code=status.HTTP_202_ACCEPTED
+)
 async def update_kid(
     id: str,
     kid_request: KidCreateRequest,

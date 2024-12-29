@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field
 from database import SessionLocal
 from models import KidPermission
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 
 router = APIRouter(
     prefix="/kid_permission",
@@ -66,3 +66,22 @@ async def post_kid_permission(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="KidPermission with the same kid_id, parent_id, and role_id already exists.",
         )
+
+
+@router.get(
+    "/kid_permissions/{kid_id}",
+    response_model=List[KidPermissionResponse],
+    status_code=status.HTTP_200_OK,
+)
+async def get_kid_permissions_by_kid_id(
+    kid_id: str, db: Session = db_dependency
+):
+    kid_permissions = db.query(KidPermission).filter(KidPermission.kid_id == kid_id).all()
+
+    if not kid_permissions:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"No permissions found for kid with ID '{kid_id}'.",
+        )
+
+    return kid_permissions
