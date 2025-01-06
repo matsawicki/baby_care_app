@@ -1,15 +1,34 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
+from dotenv import load_dotenv
+import os
 
-SQLALCHEMY_DATABASE_URL = 'sqlite:///./baby_care_app.db'
 
-engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={'check_same_thread': False})
+load_dotenv()
 
+DB_USER = os.getenv("DATABASE_USER")
+DB_PASSWORD = os.getenv("DATABASE_PASSWORD")
+DB_HOST = os.getenv("DATABASE_HOST")
+DB_PORT = os.getenv("DATABASE_PORT")
+DB_NAME = os.getenv("DATABASE_NAME")
+
+SQLALCHEMY_DATABASE_URL = (
+    f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+)
+
+
+# Create engine
+engine = create_engine(SQLALCHEMY_DATABASE_URL)
+
+# SessionLocal is configured with the engine
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
+# Declarative base for ORM models
 Base = declarative_base()
 
+
+# Dependency for getting DB session
 def get_db():
     db = SessionLocal()
     try:

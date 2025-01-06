@@ -15,6 +15,9 @@ pydantic = "^2.10.4"
 pre-commit = "^4.0.1"
 uvicorn = "^0.34.0"
 passlib = "^1.7.4"
+alembic = "^1.14.0"
+python-dotenv = "^1.0.1"
+psycopg2 = "^2.9.10"
 
 
 [build-system]
