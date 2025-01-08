@@ -1,0 +1,20 @@
+services:
+  db:
+    image: postgres:16.6-bullseye
+    container_name: fastapi_db
+    environment:
+      - DATABASE_USER
+      - DATABASE_PASSWORD
+      - DATABASE_NAME
+    ports:
+      - "5432:5432"
+
+  web:
+    build: .
+    container_name: fastapi_web
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    environment:
+      - DATABASE_HOST

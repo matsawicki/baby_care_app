@@ -8,7 +8,7 @@ import urllib.parse
 
 load_dotenv()
 
-DB_USER = urllib.parse.quote_plus(os.getenv("DATABASE_USER"))
+DB_USER = os.getenv("DATABASE_USER")
 DB_PASSWORD = urllib.parse.quote_plus(os.getenv("DATABASE_PASSWORD"))
 DB_HOST = os.getenv("DATABASE_HOST")
 DB_PORT = os.getenv("DATABASE_PORT")
