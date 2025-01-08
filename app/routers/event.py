@@ -4,8 +4,8 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.future import select
 from typing import List, Optional
 from pydantic import BaseModel, Field
-from database import SessionLocal
-from models import Event
+from app.database import SessionLocal
+from app.models import Event
 from datetime import datetime, timezone
 
 router = APIRouter(

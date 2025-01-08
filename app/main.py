@@ -1,7 +1,7 @@
 from fastapi import FastAPI
-import models
-from database import engine
-from routers import enum, event, parent, kid_permission, kid
+import app.models as models
+from app.database import engine
+from app.routers import enum, event, parent, kid_permission, kid
 
 app = FastAPI()
 

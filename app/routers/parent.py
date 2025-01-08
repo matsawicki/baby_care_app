@@ -2,8 +2,8 @@ from fastapi import APIRouter, status, HTTPException, Depends
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from pydantic import BaseModel, Field, EmailStr
-from database import SessionLocal
-from models import Parent
+from app.database import SessionLocal
+from app.models import Parent
 from datetime import datetime
 from passlib.context import CryptContext
 from typing import Optional

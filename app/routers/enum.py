@@ -4,8 +4,8 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.future import select
 from typing import List, Optional
 from pydantic import BaseModel, Field
-from database import SessionLocal
-from models import Enum, EnumHistory
+from app.database import SessionLocal
+from app.models import Enum, EnumHistory
 from datetime import datetime, timezone
 import uuid
 

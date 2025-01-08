@@ -8,11 +8,11 @@ import urllib.parse
 
 load_dotenv()
 
-DB_USER = os.getenv("DATABASE_USER")
-DB_PASSWORD = urllib.parse.quote_plus(os.getenv("DATABASE_PASSWORD"))
-DB_HOST = os.getenv("DATABASE_HOST")
+DB_USER = os.getenv("POSTGRES_USER")
+DB_PASSWORD = urllib.parse.quote_plus(os.getenv("POSTGRES_PASSWORD"))
+DB_HOST = os.getenv("DATABASE_URL")
 DB_PORT = os.getenv("DATABASE_PORT")
-DB_NAME = os.getenv("DATABASE_NAME")
+DB_NAME = os.getenv("POSTGRES_DB")
 
 SQLALCHEMY_DATABASE_URL = (
     f"postgresql+psycopg2://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"

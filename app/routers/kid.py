@@ -4,8 +4,8 @@ from sqlalchemy.exc import IntegrityError
 from datetime import datetime
 from typing import Optional
 from pydantic import BaseModel, Field
-from database import SessionLocal
-from models import Kid, Parent, KidPermission, Enum
+from app.database import SessionLocal
+from app.models import Kid, Parent, KidPermission, Enum
 
 router = APIRouter(
     prefix="/kid", tags=["kid"], responses={404: {"description": "Not found"}}

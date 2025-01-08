@@ -2,8 +2,8 @@ from fastapi import APIRouter, status, HTTPException, Depends
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from pydantic import BaseModel, Field
-from database import SessionLocal
-from models import KidPermission
+from app.database import SessionLocal
+from app.models import KidPermission
 from datetime import datetime
 from typing import Optional, List
 
